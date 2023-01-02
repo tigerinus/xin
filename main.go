@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/coreos/go-systemd/daemon"
 	"github.com/tigerinus/xin/codegen"
 	"github.com/tigerinus/xin/common"
@@ -23,7 +23,6 @@ import (
 	"github.com/tigerinus/xin/repository"
 	"github.com/tigerinus/xin/route"
 	"github.com/tigerinus/xin/service"
-	"go.uber.org/zap"
 )
 
 const localhost = "127.0.0.1"
@@ -37,6 +36,8 @@ var (
 
 	//go:embed api/message_bus/openapi.yaml
 	_docYAML string
+
+	logger = log.Default()
 )
 
 func main() {
@@ -56,8 +57,6 @@ func main() {
 
 	// initialization
 	config.InitSetup(*configFlag)
-
-	logger.LogInit(config.AppInfo.LogPath, config.AppInfo.LogSaveName, config.AppInfo.LogFileExt)
 
 	// repository
 	if err := file.IsNotExistMkDir(config.CommonInfo.RuntimePath); err != nil {
@@ -111,15 +110,15 @@ func main() {
 
 	// notify systemd
 	if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
-		logger.Error("Failed to notify systemd that message bus service is ready", zap.Error(err))
+		logger.Printf("Failed to notify systemd that message bus service is ready: %s\n", err.Error())
 	} else if supported {
-		logger.Info("Notified systemd that message bus service is ready")
+		logger.Printf("Notified systemd that message bus service is ready\n")
 	} else {
-		logger.Info("This process is not running as a systemd service.")
+		logger.Printf("This process is not running as a systemd service.\n")
 	}
 
 	// start http server
-	logger.Info("MessageBus service is listening...", zap.Any("address", listener.Addr().String()))
+	logger.Printf("MessageBus service is listening at %s...", listener.Addr().String())
 
 	server := &http.Server{
 		Handler:           mux,
@@ -127,5 +126,5 @@ func main() {
 	}
 
 	err = server.Serve(listener)
-	logger.Info("MessageBus service is stopped", zap.Error(err))
+	logger.Printf("MessageBus service is stopped: %s", err.Error())
 }

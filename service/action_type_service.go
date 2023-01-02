@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/tigerinus/xin/common"
 	"github.com/tigerinus/xin/model"
 	"github.com/tigerinus/xin/repository"
@@ -130,7 +129,7 @@ func (s *ActionService) Unsubscribe(sourceID string, name string, c chan model.A
 
 		if subscriber == c {
 			if i >= len(s.subscriberChannels[sourceID][name]) {
-				logger.Error("the i-th subscriber is removed before we get here - concurrency issue?", zap.Int("subscriber", i), zap.Int("total", len(s.subscriberChannels[sourceID][name])))
+				logger.Printf("the i-th subscriber is removed before we get here - concurrency issue?", zap.Int("subscriber", i), zap.Int("total", len(s.subscriberChannels[sourceID][name])))
 				return ErrAlreadySubscribed
 			}
 			s.subscriberChannels[sourceID][name] = append(s.subscriberChannels[sourceID][name][:i], s.subscriberChannels[sourceID][name][i+1:]...)

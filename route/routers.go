@@ -1,6 +1,7 @@
 package route
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,6 +14,8 @@ import (
 	"github.com/tigerinus/xin/codegen"
 	"github.com/tigerinus/xin/service"
 )
+
+var logger = log.Default()
 
 func NewAPIRouter(swagger *openapi3.T, services *service.Services) (http.Handler, error) {
 	apiRoute := NewAPIRoute(services)

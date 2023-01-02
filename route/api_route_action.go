@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/IceWhaleTech/CasaOS-Common/utils"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/labstack/echo/v4"
@@ -156,23 +155,23 @@ func (r *APIRoute) SubscribeAction(c echo.Context, sourceID codegen.SourceID, pa
 		defer func(actionNames []string) {
 			for _, name := range actionNames {
 				if err := r.services.ActionService.Unsubscribe(sourceID, name, channel); err != nil {
-					logger.Error("error when trying to unsubscribe an action type", zap.Error(err), zap.String("source_id", sourceID), zap.String("name", name))
+					logger.Printf("error when trying to unsubscribe an action type", zap.Error(err), zap.String("source_id", sourceID), zap.String("name", name))
 				}
 			}
 		}(actionNames)
 
-		logger.Info("started", zap.String("remote_addr", conn.RemoteAddr().String()))
+		logger.Printf("started", zap.String("remote_addr", conn.RemoteAddr().String()))
 
 		for {
 			action, ok := <-channel
 			if !ok {
-				logger.Info("channel closed")
+				logger.Printf("channel closed")
 				return
 			}
 
 			if action.SourceID == common.MessageBusSourceID && action.Name == common.MessageBusHeartbeatName {
 				if err := wsutil.WriteServerMessage(conn, ws.OpPing, []byte{}); err != nil {
-					logger.Error("error when trying to send ping message", zap.Error(err))
+					logger.Printf("error when trying to send ping message", zap.Error(err))
 					return
 				}
 				continue
@@ -180,17 +179,17 @@ func (r *APIRoute) SubscribeAction(c echo.Context, sourceID codegen.SourceID, pa
 
 			message, err := json.Marshal(out.ActionAdapter(action))
 			if err != nil {
-				logger.Error("error when trying to marshal action", zap.Error(err))
+				logger.Printf("error when trying to marshal action", zap.Error(err))
 				continue
 			}
 
-			logger.Info("sending", zap.String("remote_addr", conn.RemoteAddr().String()), zap.String("message", string(message)))
+			logger.Printf("sending", zap.String("remote_addr", conn.RemoteAddr().String()), zap.String("message", string(message)))
 
 			if err := wsutil.WriteServerBinary(conn, message); err != nil {
 				if _, ok := err.(*net.OpError); ok {
-					logger.Info("ended", zap.String("error", err.Error()))
+					logger.Printf("ended", zap.String("error", err.Error()))
 				} else {
-					logger.Error("error", zap.String("error", err.Error()))
+					logger.Printf("error", zap.String("error", err.Error()))
 				}
 				return
 			}

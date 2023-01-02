@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
 	"github.com/tigerinus/xin/common"
 	"github.com/tigerinus/xin/model"
 	"github.com/tigerinus/xin/repository"
@@ -129,9 +128,9 @@ func (s *EventService) Unsubscribe(sourceID string, name string, c chan model.Ev
 		defer s.mutex.Unlock()
 
 		if subscriber == c {
-			logger.Info("unsubscribing from event type", zap.String("sourceID", sourceID), zap.String("name", name), zap.Int("subscriber", i))
+			logger.Printf("unsubscribing from event type", zap.String("sourceID", sourceID), zap.String("name", name), zap.Int("subscriber", i))
 			if i >= len(s.subscriberChannels[sourceID][name]) {
-				logger.Error("the i-th subscriber is removed before we get here - concurrency issue?", zap.Int("subscriber", i), zap.Int("total", len(s.subscriberChannels[sourceID][name])))
+				logger.Printf("the i-th subscriber is removed before we get here - concurrency issue?", zap.Int("subscriber", i), zap.Int("total", len(s.subscriberChannels[sourceID][name])))
 				return ErrAlreadySubscribed
 			}
 			s.subscriberChannels[sourceID][name] = append(s.subscriberChannels[sourceID][name][:i], s.subscriberChannels[sourceID][name][i+1:]...)

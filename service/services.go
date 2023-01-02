@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/tigerinus/xin/repository"
 )
@@ -13,6 +14,8 @@ type Services struct {
 }
 
 var (
+	logger = log.Default()
+
 	ErrInboundChannelNotFound     = errors.New("inbound channel not found")
 	ErrSubscriberChannelsNotFound = errors.New("subscriber channels not found")
 	ErrAlreadySubscribed          = errors.New("already subscribed")
