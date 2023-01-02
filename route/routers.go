@@ -3,11 +3,8 @@ package route
 import (
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
-	"github.com/IceWhaleTech/CasaOS-Common/utils/common_err"
-	"github.com/IceWhaleTech/CasaOS-Common/utils/jwt"
 	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -34,35 +31,6 @@ func NewAPIRouter(swagger *openapi3.T, services *service.Services) (http.Handler
 	e.Use(echo_middleware.Gzip())
 
 	e.Use(echo_middleware.Logger())
-
-	e.Use(echo_middleware.JWTWithConfig(echo_middleware.JWTConfig{
-		Skipper: func(c echo.Context) bool {
-			if c.RealIP() == "::1" || c.RealIP() == "127.0.0.1" {
-				return true
-			}
-
-			if c.Request().Method == echo.GET && c.Request().Header.Get(echo.HeaderUpgrade) == "websocket" {
-				return true
-			}
-
-			return false
-		},
-		ParseTokenFunc: func(token string, c echo.Context) (interface{}, error) {
-			claims, code := jwt.Validate(token)
-			if code != common_err.SUCCESS {
-				return nil, echo.ErrUnauthorized
-			}
-
-			c.Request().Header.Set("user_id", strconv.Itoa(claims.ID))
-
-			return claims, nil
-		},
-		TokenLookupFuncs: []echo_middleware.ValuesExtractor{
-			func(c echo.Context) ([]string, error) {
-				return []string{c.Request().Header.Get(echo.HeaderAuthorization)}, nil
-			},
-		},
-	}))
 
 	e.Use(middleware.OapiRequestValidatorWithOptions(swagger, &middleware.Options{Options: openapi3filter.Options{AuthenticationFunc: openapi3filter.NoopAuthenticationFunc}}))
 
