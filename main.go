@@ -9,14 +9,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/IceWhaleTech/CasaOS-Common/external"
-	"github.com/IceWhaleTech/CasaOS-Common/model"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/file"
 	util_http "github.com/IceWhaleTech/CasaOS-Common/utils/http"
 	"github.com/IceWhaleTech/CasaOS-Common/utils/logger"
@@ -113,37 +109,6 @@ func main() {
 		panic(err)
 	}
 
-	// register at gateway
-	u, err := url.Parse(swagger.Servers[0].URL)
-	if err != nil {
-		panic(err)
-	}
-
-	apiPath := strings.TrimRight(u.Path, "/")
-	apiPaths := []string{apiPath, "/doc" + apiPath}
-
-	gatewayManagement, err := external.NewManagementService(config.CommonInfo.RuntimePath)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, apiPath := range apiPaths {
-		err = gatewayManagement.CreateRoute(&model.Route{
-			Path:   apiPath,
-			Target: "http://" + listener.Addr().String(),
-		})
-
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// write address file
-	addressFilePath, err := writeAddressFile(config.CommonInfo.RuntimePath, external.MessageBusAddressFilename, "http://"+listener.Addr().String())
-	if err != nil {
-		panic(err)
-	}
-
 	// notify systemd
 	if supported, err := daemon.SdNotify(false, daemon.SdNotifyReady); err != nil {
 		logger.Error("Failed to notify systemd that message bus service is ready", zap.Error(err))
@@ -154,7 +119,7 @@ func main() {
 	}
 
 	// start http server
-	logger.Info("MessageBus service is listening...", zap.Any("address", listener.Addr().String()), zap.String("filepath", addressFilePath))
+	logger.Info("MessageBus service is listening...", zap.Any("address", listener.Addr().String()))
 
 	server := &http.Server{
 		Handler:           mux,
@@ -163,14 +128,4 @@ func main() {
 
 	err = server.Serve(listener)
 	logger.Info("MessageBus service is stopped", zap.Error(err))
-}
-
-func writeAddressFile(runtimePath string, filename string, address string) (string, error) {
-	err := os.MkdirAll(runtimePath, 0o755)
-	if err != nil {
-		return "", err
-	}
-
-	filepath := filepath.Join(runtimePath, filename)
-	return filepath, os.WriteFile(filepath, []byte(address), 0o600)
 }
